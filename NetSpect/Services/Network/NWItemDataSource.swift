@@ -8,7 +8,7 @@
 import SwiftUI
 import Combine
 
-class NWItemManager: ObservableObject {
+final class NWItemManager: ObservableObject {
     static let shared = NWItemManager()
 
     @Published var items: [NWLogItem] = []

@@ -7,7 +7,7 @@
 
 import Foundation
 
-class NetworkInterceptor {
+final public class NetworkInterceptor {
     static let shared = NetworkInterceptor()
     
     private init() {
@@ -15,7 +15,7 @@ class NetworkInterceptor {
     }
 }
 
-class InterceptingURLProtocol: URLProtocol {
+final private class InterceptingURLProtocol: URLProtocol {
     private var sessionTask: URLSessionDataTask?
     private static let taskCacheKey = "TRACKED_TASK"
 
