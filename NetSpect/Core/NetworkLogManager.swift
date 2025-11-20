@@ -8,14 +8,15 @@
 import SwiftUI
 import Combine
 
-final class NWItemManager: ObservableObject {
-    static let shared = NWItemManager()
+final internal class NetworkLogManager: ObservableObject {
+    static let shared = NetworkLogManager()
 
     @Published var items: [NWLogItem] = []
 
     private var itemUpdateTask: Task<Void, Never>?
 
     private init() {
+        URLSessionConfiguration.enableNetworkSwizzling()
         startObservingUpdates()
     }
 
@@ -39,7 +40,7 @@ final class NWItemManager: ObservableObject {
         self.items = items
     }
 
-    deinit {
+    func cancel() {
         itemUpdateTask?.cancel()
     }
 }

@@ -7,10 +7,13 @@
 
 import Foundation
 
-final public class NetworkInterceptor {
-    public static let shared = NetworkInterceptor()
+final internal class CoreManager {
     
-    private init() {
+    func enable() {
         URLSessionConfiguration.enableNetworkSwizzling()
+    }
+    
+    func disable() {
+        NetworkLogManager.shared.cancel()
     }
 }

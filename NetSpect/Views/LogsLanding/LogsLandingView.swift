@@ -9,7 +9,7 @@ import SwiftUI
 import UIKit
 
 struct ContentView: View {
-    @StateObject private var manager = NWItemManager.shared
+    @StateObject private var manager = NetworkLogManager.shared
     @State private var isCallServiceLoaded = false
     @State private var showExportSheet = false
     @State private var exportURL: URL?

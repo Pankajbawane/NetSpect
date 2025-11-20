@@ -29,7 +29,7 @@ final internal class NetworkURLProtocol: URLProtocol {
         
         var log = NWLogItem(url: request.url?.absoluteString ?? "")
         logger(log: &log, request: thisRequest)
-        NWItemManager.shared.add(log)
+        NetworkLogManager.shared.add(log)
         
         let config = URLSessionConfiguration.default
         let session = URLSession(configuration: config, delegate: nil, delegateQueue: nil)
@@ -39,7 +39,7 @@ final internal class NetworkURLProtocol: URLProtocol {
             sleep(UInt32(random))
             
             self.logger(log: &log, response: response, data: data, error: error)
-            NWItemManager.shared.add(log)
+            NetworkLogManager.shared.add(log)
 
             if let error = error {
                 self.client?.urlProtocol(self, didFailWithError: error)
