@@ -22,14 +22,14 @@ final internal class NetworkLogManager: ObservableObject {
 
     func add(_ item: NWLogItem) {
         Task.detached {
-            await NWItemContainer.shared.add(item)
+            await NetworkItemContainer.shared.add(item)
         }
     }
 
     private func startObservingUpdates() {
         // Listen for changes from the actor
         itemUpdateTask = Task {
-            for await updatedItems in await NWItemContainer.shared.itemUpdates() {
+            for await updatedItems in await NetworkItemContainer.shared.itemUpdates() {
                 await updareItems(items: updatedItems)
             }
         }
@@ -46,8 +46,8 @@ final internal class NetworkLogManager: ObservableObject {
 }
 
 
-fileprivate actor NWItemContainer {
-    static let shared = NWItemContainer()
+fileprivate actor NetworkItemContainer {
+    static let shared = NetworkItemContainer()
     private(set) var items: [NWLogItem] = []
     private var cache: [UUID: Int] = [:]
 

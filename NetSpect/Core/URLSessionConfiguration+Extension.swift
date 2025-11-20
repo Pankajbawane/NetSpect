@@ -26,6 +26,24 @@ internal extension URLSessionConfiguration {
         method_exchangeImplementations(defaultMethod, swizzledDefaultMethod)
         method_exchangeImplementations(ephemeralMethod, swizzledEphemeralMethod)
     }
+    
+    static func disableNetworkSwizzling() {
+        let defaultSelector = #selector(getter: URLSessionConfiguration.default)
+        let ephemeralSelector = #selector(getter: URLSessionConfiguration.ephemeral)
+
+        guard let defaultMethod = class_getClassMethod(URLSessionConfiguration.self, defaultSelector),
+              let swizzledDefaultMethod = class_getClassMethod(URLSessionConfiguration.self,
+                                                               #selector(URLSessionConfiguration.nwDefault)),
+
+              let ephemeralMethod = class_getClassMethod(URLSessionConfiguration.self, ephemeralSelector),
+              let swizzledEphemeralMethod = class_getClassMethod(URLSessionConfiguration.self,
+                                                                 #selector(URLSessionConfiguration.nwEphemeral)) else {
+            return
+        }
+
+        method_exchangeImplementations(swizzledDefaultMethod, defaultMethod)
+        method_exchangeImplementations(swizzledEphemeralMethod, ephemeralMethod)
+    }
 
     @objc class func nwDefault() -> URLSessionConfiguration {
         let config = nwDefault()

@@ -14,6 +14,7 @@ final internal class CoreManager {
     }
     
     func disable() {
+        URLSessionConfiguration.disableNetworkSwizzling()
         NetworkLogManager.shared.cancel()
     }
 }
