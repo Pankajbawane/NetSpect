@@ -8,14 +8,14 @@
 import Foundation
 
 final public class NetworkInterceptor {
-    static let shared = NetworkInterceptor()
+    public static let shared = NetworkInterceptor()
     
     private init() {
-        URLSessionConfiguration.enableProtocolSwizzling()
+        URLSessionConfiguration.enableNetworkSwizzling()
     }
 }
 
-final private class InterceptingURLProtocol: URLProtocol {
+final private class NetworkURLProtocol: URLProtocol {
     private var sessionTask: URLSessionDataTask?
     private static let taskCacheKey = "TRACKED_TASK"
 
@@ -70,11 +70,11 @@ final private class InterceptingURLProtocol: URLProtocol {
     }
     
     private func logger(log: inout NWLogItem, request: NSMutableURLRequest) {
-        print("➡️ Request: \(request.httpMethod) \(request.url?.absoluteString ?? "")")
+        print("Logging Request: \(request.httpMethod) \(request.url?.absoluteString ?? "")")
         log.method = request.httpMethod
         
         if let headers = request.allHTTPHeaderFields, !headers.isEmpty {
-            print("🧾 Request Headers:\n\(headers.prettyPrintedJSON)")
+            print("Logging Request Headers:\n\(headers.prettyPrintedJSON)")
             log.headers = headers.prettyPrintedJSON
         }
 
@@ -82,10 +82,10 @@ final private class InterceptingURLProtocol: URLProtocol {
             if let json = try? JSONSerialization.jsonObject(with: body, options: []),
                let data = try? JSONSerialization.data(withJSONObject: json, options: [.prettyPrinted]),
                let pretty = String(data: data, encoding: .utf8) {
-                print("📦 Request Body:\n\(pretty)")
+                print("Logging Request Body:\n\(pretty)")
                 log.requestBody = pretty
             } else if let string = String(data: body, encoding: .utf8) {
-                print("📦 Request Body (raw):\n\(string)")
+                print("Logging Request Body (raw):\n\(string)")
                 log.requestBody = string
             }
         }
@@ -93,7 +93,7 @@ final private class InterceptingURLProtocol: URLProtocol {
     
     private func logger(log: inout NWLogItem, response: URLResponse?, data: Data?, error: Error?) {
         if let httpResponse = response as? HTTPURLResponse {
-            print("📄 Response Headers:\n\(httpResponse.allHeaderFields.prettyPrintedHeaders)" as Any)
+            print("Logging Response Headers:\n\(httpResponse.allHeaderFields.prettyPrintedHeaders)" as Any)
             log.statusCode = httpResponse.statusCode
             log.responseHeaders = httpResponse.allHeaderFields.prettyPrintedHeaders
             log.mimetype = httpResponse.mimeType
@@ -104,10 +104,10 @@ final private class InterceptingURLProtocol: URLProtocol {
             if let json = try? JSONSerialization.jsonObject(with: data, options: []),
                let jsonData = try? JSONSerialization.data(withJSONObject: json, options: [.prettyPrinted]),
                let pretty = String(data: jsonData, encoding: .utf8) {
-                print("📬 Response Body:\n\(pretty)")
+                print("Logging Response Body:\n\(pretty)")
                 log.responseBody = pretty
             } else if let string = String(data: data, encoding: .utf8) {
-                print("📬 Response Body (raw):\n\(string)")
+                print("Logging Response Body (raw):\n\(string)")
                 log.responseBody = string
             }
         }
@@ -116,34 +116,19 @@ final private class InterceptingURLProtocol: URLProtocol {
     }
 }
 
-extension Dictionary {
-    var prettyPrintedJSON: String {
-        if let data = try? JSONSerialization.data(withJSONObject: self, options: [.prettyPrinted]),
-           let str = String(data: data, encoding: .utf8) {
-            return str
-        }
-        return "\(self)"
-    }
-    
-    var prettyPrintedHeaders: String {
-        var headers = ""
-        for (key, value) in self {
-            headers += "\(key): \(value)\n"
-        }
-        return headers
-    }
-}
-
 fileprivate extension URLSessionConfiguration {
-    static func enableProtocolSwizzling() {
+    
+    static func enableNetworkSwizzling() {
         let defaultSelector = #selector(getter: URLSessionConfiguration.default)
         let ephemeralSelector = #selector(getter: URLSessionConfiguration.ephemeral)
 
         guard let defaultMethod = class_getClassMethod(URLSessionConfiguration.self, defaultSelector),
-              let swizzledDefaultMethod = class_getClassMethod(URLSessionConfiguration.self, #selector(URLSessionConfiguration.myDefault)),
+              let swizzledDefaultMethod = class_getClassMethod(URLSessionConfiguration.self,
+                                                               #selector(URLSessionConfiguration.nwDefault)),
 
               let ephemeralMethod = class_getClassMethod(URLSessionConfiguration.self, ephemeralSelector),
-              let swizzledEphemeralMethod = class_getClassMethod(URLSessionConfiguration.self, #selector(URLSessionConfiguration.myEphemeral)) else {
+              let swizzledEphemeralMethod = class_getClassMethod(URLSessionConfiguration.self,
+                                                                 #selector(URLSessionConfiguration.nwEphemeral)) else {
             return
         }
 
@@ -151,22 +136,22 @@ fileprivate extension URLSessionConfiguration {
         method_exchangeImplementations(ephemeralMethod, swizzledEphemeralMethod)
     }
 
-    @objc class func myDefault() -> URLSessionConfiguration {
-        let config = myDefault()
+    @objc class func nwDefault() -> URLSessionConfiguration {
+        let config = nwDefault()
         injectInterceptor(into: config)
         return config
     }
 
-    @objc class func myEphemeral() -> URLSessionConfiguration {
-        let config = myEphemeral()
+    @objc class func nwEphemeral() -> URLSessionConfiguration {
+        let config = nwEphemeral()
         injectInterceptor(into: config)
         return config
     }
 
     private static func injectInterceptor(into config: URLSessionConfiguration) {
         var classes = config.protocolClasses ?? []
-        if !classes.contains(where: { $0 == InterceptingURLProtocol.self }) {
-            classes.insert(InterceptingURLProtocol.self, at: 0)
+        if !classes.contains(where: { $0 == NetworkURLProtocol.self }) {
+            classes.insert(NetworkURLProtocol.self, at: 0)
             config.protocolClasses = classes
         }
     }
